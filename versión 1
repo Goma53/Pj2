@@ -1,0 +1,212 @@
+extends KinematicBody2D
+export var velocidad = 16
+export var resistencia = 90
+export var vida = 10
+var gravedad = 12
+var salto = 245
+var acciones = ("Descanso")
+var enfriamiento = 0
+var coldown_parpadeo = true
+var detener = false
+var movimiento = Vector2(0,0)
+var habilidad = ("nada")
+var recarga = true
+
+
+func _ready():
+	$Resistencia.max_value = resistencia
+	$Vida.max_value = vida
+	$Recarga.wait_time = 0.2
+	$Timer.wait_time = 0.1
+	$Visuales.playing = true
+	$"Puñetazo 1".scale.x = 0
+	$"Puñetazo 1".scale.y = 0
+func Habilidades():
+	if Input.is_action_pressed("botton_shift") and habilidad == ("nada") and resistencia > 2:
+		if Input.is_action_pressed("boton_a") and Input.is_action_pressed("botton_shift"):
+			habilidad = ("acelerar 1")
+		elif Input.is_action_pressed("boton_d")and Input.is_action_pressed("botton_shift"):
+			habilidad = ("acelerar 1")
+		else:
+			habilidad = ("nada")
+	if not Input.is_action_pressed("botton_shift") and habilidad == ("acelerar 1") or resistencia < 2:
+		habilidad = ("nada")
+
+func _Acciones():
+	if Input.is_action_pressed("boton_a") and not Input.is_action_pressed("Botton_e"):
+		movimiento.x -=velocidad
+		$Visuales.flip_h = true
+		if velocidad < 17:
+			acciones = ("Caminar")
+		if velocidad > 16:
+			acciones = ("Correr")
+	elif Input.is_action_pressed("boton_d") and not Input.is_action_pressed("botton_q"):
+		movimiento.x +=velocidad
+		$Visuales.flip_h = false
+		if velocidad < 17:
+			acciones = ("Caminar")
+		if velocidad > 16:
+			acciones = ("Correr")
+	else:
+		acciones = ("Descanso")
+	if Input.is_action_pressed("boton_w") and is_on_floor() and resistencia > 10: 
+			movimiento.y -= salto
+			resistencia -= 10
+
+
+	if not is_on_floor(): 
+		if movimiento.y < -1:
+			if movimiento.x <= 4 or movimiento.x >= -4:
+				acciones = ("Elevarse sin moverse")
+			if movimiento.x > 4 or movimiento.x <= -4:
+				acciones = ("Elevarse moverse")
+		if movimiento.y > 0:
+			movimiento.x *= 0.8
+			if movimiento.x <= 4 or movimiento.x >= 4:
+				acciones = ("Caer sin moverse")
+			if movimiento.x > 4 or movimiento.x <= 4:
+				acciones = ("Caer moverse")
+
+	if Input.is_action_pressed("botton_o") and is_on_floor() and resistencia >= 3 and acciones == ("Descanso"):
+		if resistencia >= 3: 
+			acciones = ("Puñetazo 1")
+			if $Visuales.frame == 3:
+				resistencia -= 1
+				$"Puñetazo 1".scale.x = 1
+				$"Puñetazo 1".scale.y = 1
+			elif $Visuales.frame == 7:
+				resistencia -= 1 
+				$"Puñetazo 1".scale.x = 1
+				$"Puñetazo 1".scale.y = 1
+			else:
+				$"Puñetazo 1".scale.x = 0
+				$"Puñetazo 1".scale.y = 0
+		elif resistencia < 3:
+			acciones = ("Descanso")
+			$"Puñetazo 1".visible = false
+	elif Input.is_action_pressed("botton_p") and is_on_floor() and resistencia >= 10 and acciones == ("Descanso"):
+		if resistencia >= 10: 
+			acciones = ("Corte 1")
+			if $Visuales.frame == 5:
+				resistencia -= 3
+		elif resistencia < 7:
+			acciones = ("Descanso")
+
+	if Input.is_action_pressed("botton_q") and $Visuales.flip_h == false and resistencia > 4:
+		acciones = ("Corte 2")
+		if $Visuales.frame == 1:
+			resistencia -= 2
+		if $Visuales.frame == 4:
+			$Visuales.flip_h = true
+	elif Input.is_action_pressed("Botton_e") and $Visuales.flip_h == true and resistencia > 4:
+		acciones = ("Corte 2")
+		if $Visuales.frame == 1:
+			resistencia -= 2
+		if $Visuales.frame == 4:
+			$Visuales.flip_h = false
+
+func colisiones():
+	if $Visuales.flip_h == false:
+		if acciones == ("Puñetazo 1"):
+			if $Visuales.frame == 7 and not $Visuales.frame == 3:
+				$"Puñetazo 1/ataque".position.x = 5
+				$"Puñetazo 1/ataque".position.y = -1
+			if $Visuales.frame == 3 and not $Visuales.frame == 7:
+				$"Puñetazo 1/ataque".position.x = 3
+				$"Puñetazo 1/ataque".position.y = 2
+		if acciones == ("Descanso"):
+			$Colision.position.x = 2
+			$Cuerpo.position.x = 2
+			$Cuerpo.position.y = 0
+		elif acciones == ("Caminar"):
+			$Colision.position.x = 1
+			$Cuerpo.position.x = 1
+			$Cuerpo.position.y = 0
+		elif acciones == ("Correr"):
+			$Colision.position.x = 3
+			$Cuerpo.position.x = 3
+			$Cuerpo.position.y = 0
+		elif acciones == ("Corte 2"):
+			$Colision.position.x = 0
+			$Cuerpo.position.x = -1
+			$Cuerpo.position.y = 6
+		elif acciones == ("Caer moverse") or acciones == ("Caer sin moverse") or acciones == ("Elevarse moverse") or acciones == ("Elevarse sin moverse"):
+			$Colision.position.x = 0
+			$Cuerpo.position.x = 1
+			$Cuerpo.position.y = -3
+	if $Visuales.flip_h == true:
+		if acciones == ("Descanso"):
+			$Colision.position.x = -2
+			$Cuerpo.position.x = -2
+			$Cuerpo.position.y = 0
+		elif acciones == ("Caminar"):
+			$Colision.position.x = -1
+			$Cuerpo.position.x = -1
+			$Cuerpo.position.y = 0
+		elif acciones == ("Correr"):
+			$Colision.position.x = -3
+			$Cuerpo.position.x = -3
+			$Cuerpo.position.y = 0
+		elif acciones == ("Corte 2"):
+			$Colision.position.x = 0
+			$Cuerpo.position.x = 1
+			$Cuerpo.position.y = 6
+		elif acciones == ("Puñetazo 1"):
+			if $Visuales.frame == 3:
+				$"Puñetazo 1/ataque".position.x = -3
+				$"Puñetazo 1/ataque".position.y = 2
+			elif $Visuales.frame == 7:
+				$"Puñetazo 1/ataque".position.x = -6
+				$"Puñetazo 1/ataque".position.y = -1
+		elif acciones == ("Caer moverse") or acciones == ("Caer sin moverse") or acciones == ("Elevarse moverse") or acciones == ("Elevarse sin moverse"):
+			$Colision.position.x = 0
+			$Cuerpo.position.x = -1
+			$Cuerpo.position.y = -3
+func _physics_process(_delta):
+	_Acciones()
+
+	Habilidades()
+
+	colisiones()
+
+	if Input.is_action_pressed("Botton_e") or Input.is_action_pressed("botton_q") or Input.is_action_pressed("botton_shift") or Input.is_action_pressed("botton_p") or Input.is_action_pressed("botton_o") or Input.is_action_pressed("botton_f"):
+		recarga = false
+	else:
+		recarga = true
+
+
+
+	$Resistencia.value = resistencia
+
+	$Vida.value = vida
+
+	$Visuales.animation = acciones
+
+	movimiento.y += gravedad
+
+	movimiento = move_and_slide(movimiento, Vector2.UP)
+
+	movimiento.x = lerp(movimiento.x , 0, 0.2)
+
+
+
+
+
+
+func _on_Recarga_timeout():
+	if resistencia <= $Resistencia.max_value and recarga == true:
+		resistencia += 2
+		if acciones == ("Descanso"):
+			resistencia += 1
+
+	if habilidad == ("acelerar 1"):
+		resistencia -= 2
+		if velocidad < 28:
+			velocidad +=1
+
+
+
+func _on_Timer_timeout():
+		if habilidad == ("nada"):
+			if velocidad > 16:
+				velocidad -=1
